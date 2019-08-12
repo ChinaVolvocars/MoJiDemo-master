@@ -15,6 +15,8 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Random;
 
 public class Materials30View extends View {
@@ -26,18 +28,27 @@ public class Materials30View extends View {
     public static final int BOTTOM_TEXT_MARGIN_TOP = (int) dp2px(7);
     public static final int BOTTOM_TEXT_MARGIN_LIFT = (int) dp2px(10);
     public static final int BOTTOM_TEXT_MARGIN_RIGHT = (int) dp2px(10);
+
+    public static final int BOX_WIDTH = (int) dp2px(130);
+    public static final int BOX_HEIGHT = (int) dp2px(60);
+    public static final int BOX_MARGIN = (int) dp2px(10);
+    public static final int BOX_MARGIN_TOP = (int) dp2px(40);
+
+
     private int mHeight, mWidth;
 
-    private int itemCount = 31;
+    private int itemCount = 7;
     private int dashedBetweenHeight = (int) dp2px(40);//虚线之间的距离
     private int bottomLineMarginDashedLine = (int) dp2px(6);//底部的线和虚线之间的距离
     private int clickPosition = -1;
 
-    private int dashedColor = Color.parseColor("#E9E9E9");
-    private int bottomLineColor = Color.parseColor("#969FA9");
+    private int dashedColor = Color.parseColor("#e9e9e9");
+    private int bottomLineColor = Color.parseColor("#969fa9");
+    private int verticalLineColor = Color.parseColor("#BFBFBF");
     private int bottomTextColor = Color.parseColor("#333333");
-    private int pointColor = Color.parseColor("#0084FF");
-    private int lineColor = Color.parseColor("#0084FF");
+    private int pointColor = Color.parseColor("#0084ff");
+    private int lineColor = Color.parseColor("#0084ff");
+    private int brokenLineColor = Color.parseColor("#ffffff");
     private int tempBaseTop;  //折线的上边Y坐标
     private int tempBaseBottom; //折线的下边Y坐标
 
@@ -46,6 +57,10 @@ public class Materials30View extends View {
     private Paint textPaint = new Paint();
     private Paint pointPaint = new Paint();
     private Paint linePaint = new Paint();
+    private Paint brokenPaint = new Paint();
+    private Paint verticalLinePaint = new Paint();
+
+    private Path brokenPath;
 
     public Materials30View(Context context) {
         this(context, null);
@@ -61,9 +76,22 @@ public class Materials30View extends View {
     }
 
     private void init() {
+        itemList = new ArrayList<>();
+        Materials30Item materials30Item;
+        Random random = new Random();
+
+        for (int i = 0; i < itemCount; i++) {
+            materials30Item = new Materials30Item();
+            double s = random.nextInt(26) % (maxTemp - minTemp + 1) + minTemp;
+            materials30Item.setCountTon(s);
+            materials30Item.setCountMaterial(i);
+            materials30Item.setTime("07-" + i);
+            itemList.add(materials30Item);
+        }
+
 
         mWidth = MARGIN_LEFT_ITEM + MARGIN_RIGHT_ITEM + itemCount * (BOTTOM_TEXT_WIDTH + BOTTOM_TEXT_MARGIN_LIFT + BOTTOM_TEXT_MARGIN_RIGHT);
-        mHeight = 800; //暂时先写死
+        mHeight = MARGIN_LEFT_ITEM + dashedBetweenHeight * 4 + bottomLineMarginDashedLine + BOTTOM_TEXT_HEIGHT;
 
         tempBaseTop = MARGIN_LEFT_ITEM;
         tempBaseBottom = MARGIN_LEFT_ITEM + dashedBetweenHeight * 4;
@@ -92,11 +120,29 @@ public class Materials30View extends View {
         linePaint.setAntiAlias(true);
         linePaint.setStyle(Paint.Style.STROKE);
         linePaint.setStrokeWidth(dp2px(1));
+
+        //浮动的
+        brokenPath = new Path();
+        brokenPaint.setAntiAlias(true);
+        brokenPaint.setStyle(Paint.Style.STROKE);
+        brokenPaint.setStrokeWidth((dp2px(1)));
+        brokenPaint.setStrokeCap(Paint.Cap.ROUND);
+        int shadowColor = Color.parseColor("#999999");
+
+        //阴影尺寸
+        int shadowSize = (int) dp2px(4);
+        brokenPaint.setShadowLayer(shadowSize, 0, 0, shadowColor);
+
+        //竖线
+        verticalLinePaint.setAntiAlias(true);
+        verticalLinePaint.setStrokeWidth(dp2px(1));
+        verticalLinePaint.setColor(verticalLineColor);
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        mWidth = MARGIN_LEFT_ITEM + MARGIN_RIGHT_ITEM + itemCount * (BOTTOM_TEXT_WIDTH + BOTTOM_TEXT_MARGIN_LIFT + BOTTOM_TEXT_MARGIN_RIGHT);
         setMeasuredDimension(mWidth, mHeight);
     }
 
@@ -113,7 +159,23 @@ public class Materials30View extends View {
         onDrawBottomText(canvas);
         onDrawPoint(canvas);
         onDrawLine(canvas);
+        onDrawFloatBackground(canvas);
     }
+
+    private void onDrawFloatBackground(Canvas canvas) {
+
+        for (int i = 0; i < itemCount; i++) {
+            if (i == clickPosition) {
+                //画白色背景
+                drawFloatTextBackground(canvas, linePoint.get(i).x, linePoint.get(i).y, i);
+                //画竖线
+                //canvas.drawLine(linePoint.get(i).x, tempBaseTop, linePoint.get(i).x, tempBaseBottom + bottomLineMarginDashedLine, verticalLinePaint);
+                //画文字
+            }
+        }
+
+    }
+
 
     private ArrayList<Point> linePoint;
 
@@ -134,16 +196,16 @@ public class Materials30View extends View {
     }
 
     private void onDrawPoint(Canvas canvas) {
-        ArrayList<Integer> temp = new ArrayList<>();
-
-        Random random = new Random();
-
+        ArrayList<Double> temp = new ArrayList<>();
         for (int i = 0; i < itemCount; i++) {
-            int s = random.nextInt(maxTemp) % (maxTemp - minTemp + 1) + minTemp;
-            temp.add(s);
+            double countTon = itemList.get(i).getCountTon();
+            temp.add(countTon);
         }
 
-//        System.out.println(temp);
+        maxTemp = Collections.max(temp);
+        minTemp = Collections.min(temp);
+
+
         linePoint = new ArrayList<>();
         for (int i = 0; i < itemCount; i++) {
             int left = MARGIN_LEFT_ITEM + i * (BOTTOM_TEXT_WIDTH + BOTTOM_TEXT_MARGIN_LIFT + BOTTOM_TEXT_MARGIN_RIGHT);
@@ -151,15 +213,74 @@ public class Materials30View extends View {
             int top = dashedBetweenHeight * 4 + bottomLineMarginDashedLine;
             int bottom = dashedBetweenHeight * 4 + bottomLineMarginDashedLine + BOTTOM_TEXT_HEIGHT;
             Rect rect = new Rect(left, top, right, bottom);
-            Point point = calculateTempPoint(left, right, temp.get(i));
+//            Point point = calculateTempPoint(left, right, temp.get(i));
+            Point point = calculateTempPoint(left, right, (int) itemList.get(i).getCountTon());
             linePoint.add(point);
+            //画竖线
+            if (i == clickPosition) {
+                canvas.drawLine(linePoint.get(i).x, tempBaseTop, linePoint.get(i).x, tempBaseBottom + bottomLineMarginDashedLine, verticalLinePaint);
+            }
             canvas.drawCircle(point.x, point.y, dp2px(3), pointPaint);
+
+
         }
+    }
+
+
+    //绘制显示浮动文字的背景
+    private void drawFloatTextBackground(Canvas canvas, int x, int y, int i) {
+        brokenPath.reset();
+        brokenPaint.setColor(brokenLineColor);
+        brokenPaint.setStyle(Paint.Style.FILL);
+        //P1
+        Point point = new Point(x, BOX_MARGIN_TOP + MARGIN_LEFT_ITEM);
+        brokenPath.moveTo(point.x + BOX_MARGIN, point.y);
+        //P2
+        point.x = point.x + BOX_WIDTH;
+        brokenPath.lineTo(point.x, point.y);
+        //P3
+        point.y = point.y + BOX_HEIGHT;
+        brokenPath.lineTo(point.x, point.y);
+        //P4
+        brokenPath.lineTo(x + BOX_MARGIN, BOX_MARGIN_TOP + MARGIN_LEFT_ITEM + BOX_HEIGHT);
+        //最后一个点连接到第一个点
+        canvas.drawPath(brokenPath, brokenPaint);
+
+        int left = (int) (x + BOX_MARGIN * 3.5);
+        int right = left + BOX_WIDTH;
+        int top = BOX_MARGIN_TOP;
+        int bottom = BOX_MARGIN_TOP + BOX_HEIGHT / 2;
+        Rect rect = new Rect(left, top, right, bottom);
+
+        Rect targetRect = new Rect(rect.left, rect.bottom, rect.right, rect.bottom);
+        Paint.FontMetricsInt fontMetrics = textPaint.getFontMetricsInt();
+        int baseline = (targetRect.bottom + targetRect.top - fontMetrics.bottom - fontMetrics.top) / 2;
+        textPaint.setTextAlign(Paint.Align.RIGHT);
+
+        String text = "入场" + itemList.get(i).getCountMaterial() + "种原材料";
+        canvas.drawText(text, targetRect.centerX(), baseline, textPaint);
+
+
+        int left1 = (int) (x + BOX_MARGIN * 3.5);
+        int right1 = left + BOX_WIDTH;
+        int top1 = (int) (BOX_MARGIN_TOP + BOX_HEIGHT / 2);
+        int bottom1 = BOX_MARGIN_TOP + BOX_HEIGHT;
+        Rect rect1 = new Rect(left1, top1, right1, bottom1);
+
+        Rect targetRect1 = new Rect(rect1.left, rect1.bottom, rect1.right, rect1.bottom);
+        Paint.FontMetricsInt fontMetrics1 = textPaint.getFontMetricsInt();
+        int baseline1 = (targetRect1.bottom + targetRect1.top - fontMetrics1.bottom - fontMetrics1.top) / 2;
+        textPaint.setTextAlign(Paint.Align.RIGHT);
+
+//        String textTotal = "合计 9856.00吨";
+        String textTotal = "合计 +" + itemList.get(i).getCountTon() + " 吨";
+        canvas.drawText(textTotal, targetRect1.centerX(), baseline1, textPaint);
+
 
     }
 
-    private int maxTemp = 26;
-    private int minTemp = 11;
+    private double maxTemp = 26;
+    private double minTemp = 5;
 
     // [16, 13, 17, 12, 25, 12, 23, 26, 16, 13, 18, 19, 22, 19, 21, 14, 14, 19, 17, 23, 17, 14, 13, 18, 19, 19, 13, 14, 12, 11, 11]
     private Point calculateTempPoint(int left, int right, int temp) {
@@ -183,20 +304,13 @@ public class Materials30View extends View {
             int baseline = (targetRect.bottom + targetRect.top - fontMetrics.bottom - fontMetrics.top) / 2;
             textPaint.setTextAlign(Paint.Align.CENTER);
 
-            String text = "01-23";
+            String text = itemList.get(i).getTime();
             canvas.drawText(text, targetRect.centerX(), baseline, textPaint);
 
         }
     }
 
     private void onDrawDashedLineAndBottomLine(Canvas canvas) {
-        //长度 根据 数据的总数 来变化  = itemCount*(BOTTOM_TEXT_WIDTH+BOTTOM_TEXT_MARGIN_LIFT+BOTTOM_TEXT_MARGIN_RIGHT)
-
-        //开始的点 x = MARGIN_LEFT_ITEM;
-        //开始的点 y = MARGIN_LEFT_ITEM + dashedBetweenHeight * i;
-        //第二条线的开始 x = MARGIN_LEFT_ITEM+dashedBetweenHeight*0 ;
-        //第二条线的开始 y = MARGIN_LEFT_ITEM+dashedBetweenHeight*1 ;
-
         for (int i = 0; i < 5; i++) {
             canvas.drawLine(
                     MARGIN_LEFT_ITEM,
@@ -236,7 +350,6 @@ public class Materials30View extends View {
 
     private void onActionUpEvent(MotionEvent event) {
         boolean isValidTouch = validateTouch(event.getX(), event.getY());
-
         if (isValidTouch) {
             invalidate();
         }
@@ -258,6 +371,15 @@ public class Materials30View extends View {
         return false;
     }
 
+
+    private List<Materials30Item> itemList = new ArrayList<>();
+
+    public void setData(List<Materials30Item> itemList) {
+        this.itemList = itemList;
+        itemCount = itemList.size();
+//        invalidate();
+        requestLayout();
+    }
 
     /**
      * dp单位转换成 px
