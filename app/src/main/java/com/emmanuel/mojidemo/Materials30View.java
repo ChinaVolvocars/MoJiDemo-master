@@ -377,7 +377,7 @@ public class Materials30View extends View {
     public void setData(List<Materials30Item> itemList) {
         this.itemList = itemList;
         itemCount = itemList.size();
-//        invalidate();
+        invalidate();
         requestLayout();
     }
 

@@ -2,6 +2,7 @@ package com.emmanuel.mojidemo;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.View;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        findViewById(R.id.tv_text).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                initViews();
+            }
+        });
+
         initViews();
     }
 
@@ -24,10 +32,12 @@ public class MainActivity extends AppCompatActivity {
     private int minTemp = 11;
 
     private void initViews() {
+        System.out.println("=======================");
         indexHorizontalScrollView = (IndexHorizontalScrollView) findViewById(R.id.indexHorizontalScrollView);
         today24HourView = (Today24HourView) findViewById(R.id.today24HourView);
         indexHorizontalScrollView.setToday24HourView(today24HourView);
         Materials30View materials30View = (Materials30View) findViewById(R.id.materials);
+        Rectangle30View rectangle30View = (Rectangle30View) findViewById(R.id.rectangle);
         Random random = new Random();
 
         List<Materials30Item> itemList = new ArrayList<>();
@@ -41,5 +51,21 @@ public class MainActivity extends AppCompatActivity {
             itemList.add(materials30Item);
         }
         materials30View.setData(itemList);
+
+
+        Rectangle30Item rectangle30Item;
+        List<Rectangle30Item> itemList1 = new ArrayList<>();
+
+        for (int i = 0; i < 20; i++) {
+            rectangle30Item = new Rectangle30Item();
+            double s = random.nextInt(26) % (maxTemp - minTemp + 1) + minTemp;
+            rectangle30Item.setTon(s);
+            rectangle30Item.setTime("07-" + i);
+            itemList1.add(rectangle30Item);
+        }
+
+        rectangle30View.setData(itemList1);
+
+
     }
 }
